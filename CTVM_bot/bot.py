@@ -8,9 +8,9 @@ from telegram.ext import (
     PollHandler,
 )
 
-from CTVM_bot.add_restaurant_conversation import AddRestaurant
-from CTVM_bot.poll_manager import PollManager
-from CTVM_bot.restaurant_list import RestaurantList
+from add_restaurant_conversation import AddRestaurant
+from poll_manager import PollManager
+from restaurant_list import RestaurantList
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
