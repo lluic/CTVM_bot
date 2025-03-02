@@ -1,5 +1,6 @@
 import logging
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -8,9 +9,9 @@ from telegram.ext import (
     PollHandler,
 )
 
-from add_restaurant_conversation import AddRestaurant
-from poll_manager import PollManager
-from restaurant_list import RestaurantList
+from CTVM_bot.add_restaurant_conversation import AddRestaurant
+from CTVM_bot.poll_manager import PollManager
+from CTVM_bot.restaurant_list import RestaurantList
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -30,18 +31,20 @@ def rating_to_stars(rating):
 ### COMANDI BASE E MENU INTERATTIVO ###
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Mostra un menu interattivo con pulsanti inline."""
-    keyboard = [
+    buttons = [
         [InlineKeyboardButton("Lista Ristoranti", callback_data="list")],
         [InlineKeyboardButton("Aggiungi Ristorante", callback_data="add")],
         [InlineKeyboardButton("Aiuto", callback_data="help")],
     ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    keyboard = InlineKeyboardMarkup(buttons)
     await update.message.reply_text(
-        "Benvenuto! Scegli un'opzione dal menu:", reply_markup=reply_markup
+        "Benvenuto! Scegli un'opzione dal menu:", reply_markup=keyboard
     )
 
 
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def help_command(
+    update: Update | CallbackQuery, context: ContextTypes.DEFAULT_TYPE
+):
     """Mostra l'elenco dei comandi disponibili."""
     help_text = (
         "Comandi disponibili:\n"
@@ -56,14 +59,14 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(help_text)
 
 
-async def show_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def show_list(update: Update | CallbackQuery, context: ContextTypes.DEFAULT_TYPE):
     """Mostra la lista dei ristoranti, il link e la valutazione in numeri ed emoji."""
     restaurants = RestaurantList().restaurants
-    text = "Lista dei ristoranti disponibili:\n"
+    text = "Lista dei ristoranti disponibili:\n\n"
     if not restaurants:
         text += "Nessun ristorante disponibile."
     for restaurant in restaurants:
-        link = restaurants.link if restaurants.link != "" else "Nessun link disponibile"
+        link = restaurant.link if restaurant.link != "" else "Nessun link disponibile"
         rating = restaurant.rating
         total_votes = restaurant.total_votes
         text += f"- {restaurant.name}\nLink: {link}\n"
@@ -133,55 +136,51 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     restaurants = RestaurantList().restaurants
 
     if data == "list":
-        await show_list(update, context)
-    elif data == "add":
-        await query.edit_message_text(
-            text="Per aggiungere un ristorante, usa il comando /aggiungi_ristorante."
-        )
+        await show_list(query, context)
     elif data == "help":
-        await help_command(update, context)
+        await help_command(query, context)
     elif data.startswith("location:"):
         # TODO: the selected restaurant button directly opens the maps link
         # TODO: ?- if possible, the button opens a map popup on telegram -?
         restaurant_name = data.split(":", 1)[1]
-        if restaurants.has(restaurant_name):
-            link = restaurants[restaurant_name].link
+        if RestaurantList().has(restaurant_name):
+            link = RestaurantList().get_restaurant(restaurant_name).link
             buttons = [[InlineKeyboardButton("Apri su Google Maps", url=link)]]
             keyboard = InlineKeyboardMarkup(buttons)
-            await query.edit_message_text(
+            await query.message.reply_text(
                 text=f"Posizione per {restaurant_name}:", reply_markup=keyboard
             )
         else:
-            await query.edit_message_text(text="Errore: ristorante non trovato.")
+            await query.message.reply_text(text="Errore: ristorante non trovato.")
     elif data.startswith("rate:"):
         restaurant_name = data.split(":", 1)[1]
-        if restaurants.has(restaurant_name):
+        if RestaurantList().has(restaurant_name):
             question = f"Come valuti {restaurant_name}? (1-5 stelle)"
             options = ["1", "2", "3", "4", "5"]
             poll_message = await query.message.reply_poll(
                 question=question, options=options, is_anonymous=False
             )
             PollManager().poll_mapping[poll_message.poll.id] = restaurant_name
-            await query.edit_message_text(
+            await query.message.reply_text(
                 text=f"Sondaggio per {restaurant_name} creato con successo!"
             )
         else:
-            await query.edit_message_text(text="Errore: ristorante non trovato.")
+            await query.message.reply_text(text="Errore: ristorante non trovato.")
     elif data.startswith("delete:"):
         restaurant_name = data.split(":", 1)[1]
-        if restaurants.has(restaurant_name):
-            restaurants.remove_restaurant(restaurant_name)
-            await query.edit_message_text(
+        if RestaurantList().has(restaurant_name):
+            RestaurantList().remove_restaurant(restaurant_name)
+            await query.message.reply_text(
                 text=f"Ristorante '{restaurant_name}' eliminato con successo."
             )
         else:
-            await query.edit_message_text(text="Errore: ristorante non trovato.")
+            await query.message.reply_text(text="Errore: ristorante non trovato.")
     else:
-        await query.edit_message_text(text="Azione non riconosciuta.")
+        await query.message.reply_text(text="Azione non riconosciuta.")
 
 
 # SETUP
-def main():
+def setup_bot():
     application = (
         Application.builder()
         .token("7360553682:AAHEVY2tjiv6bO4yGoJO7X5mrlCDNwAeZJ8")
@@ -199,7 +198,3 @@ def main():
     application.add_handler(PollHandler(PollManager().poll_update_handler))
 
     application.run_polling()
-
-
-if __name__ == "__main__":
-    main()

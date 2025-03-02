@@ -5,9 +5,10 @@ from telegram.ext import (
     MessageHandler,
     filters,
     ContextTypes,
+    CallbackQueryHandler,
 )
 
-from restaurant_list import RestaurantList
+from CTVM_bot.restaurant_list import RestaurantList
 
 
 class AddRestaurant:
@@ -20,7 +21,10 @@ class AddRestaurant:
             entry_points=[
                 CommandHandler(
                     "aggiungi_ristorante", AddRestaurant.add_restaurant_start
-                )
+                ),
+                CallbackQueryHandler(
+                    AddRestaurant.add_restaurant_start, pattern="^add$"
+                ),
             ],
             states={
                 AddRestaurant.RIST_NAME: [
@@ -41,8 +45,21 @@ class AddRestaurant:
 
     @staticmethod
     async def add_restaurant_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        await update.message.reply_text("Inserisci il nome del ristorante:")
-        return AddRestaurant.RIST_NAME
+        """Starts the restaurant addition conversation, handling both commands and button presses."""
+
+        # Handle both command and button press (callback_query)
+        if update.message:
+            message = update.message  # Command
+        elif update.callback_query:
+            query = update.callback_query
+            await query.answer()  # Acknowledge button press
+            message = query.message  # Message containing the inline keyboard
+        else:
+            return  # Failsafe: shouldn't happen
+
+        # Ask user for restaurant name
+        await message.reply_text("Inserisci il nome del ristorante:")
+        return AddRestaurant.RIST_NAME  # Move to the next state
 
     @staticmethod
     async def add_restaurant_name(update: Update, context: ContextTypes.DEFAULT_TYPE):

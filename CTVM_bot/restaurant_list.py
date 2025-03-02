@@ -1,8 +1,9 @@
 import json
 from pathlib import Path
 
+
 class Restaurant:
-    def __init__(self, name, link, rating, total_votes):
+    def __init__(self, name: str, link: str, rating: float | None, total_votes: int):
         self.name = name
         self.link = link
         self.rating = rating
@@ -22,7 +23,7 @@ class RestaurantList:
         if self._initialized:
             return
 
-        self.json_db_path = Path("data/restaurant_list.json")
+        self.json_db_path = Path("CTVM_bot/data/restaurants_db.json")
         self.restaurants = []
         self.read_restaurant_list_json()
         self._initialized = True
@@ -45,11 +46,14 @@ class RestaurantList:
         self.write_restaurant_list_json()
 
     def remove_restaurant(self, name: str):
-        self.restaurants = [r for r in self.restaurants if r["name"] != name]
+        self.restaurants = [r for r in self.restaurants if r.name != name]
         self.write_restaurant_list_json()
 
     def has(self, name: str) -> bool:
         return any(r.name == name for r in self.restaurants)
+
+    def get_restaurant(self, name: str) -> Restaurant | None:
+        return next((r for r in self.restaurants if r.name == name), None)
 
     def update_rating_and_votes(self, name: str, rating: float, total_votes: int):
         for r in self.restaurants:
@@ -79,7 +83,7 @@ class RestaurantList:
                 "name": restaurant.name,
                 "link": restaurant.link,
                 "rating": restaurant.rating,
-                "total_votes": restaurant.total_votes
+                "total_votes": restaurant.total_votes,
             }
             restaurants_dict.append(restaurant_dict)
         with open(self.json_db_path, "w") as f:

@@ -3,7 +3,7 @@ import logging
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from restaurant_list import RestaurantList
+from CTVM_bot.restaurant_list import RestaurantList
 
 
 class PollManager:
