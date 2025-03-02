@@ -1,6 +1,13 @@
 import json
 from pathlib import Path
 
+class Restaurant:
+    def __init__(self, name, link, rating, total_votes):
+        self.name = name
+        self.link = link
+        self.rating = rating
+        self.total_votes = total_votes
+
 
 class RestaurantList:
     _instance = None
@@ -15,7 +22,7 @@ class RestaurantList:
         if self._initialized:
             return
 
-        self.json_db_path = Path("CTVM_bot/data/restaurant_list.json")
+        self.json_db_path = Path("data/restaurant_list.json")
         self.restaurants = []
         self.read_restaurant_list_json()
         self._initialized = True
@@ -27,12 +34,14 @@ class RestaurantList:
         rating: float | None,
         total_votes: int,
     ):
-        self.restaurants = {
-            "name": name,
-            "link": link,
-            "rating": rating,
-            "total_votes": total_votes,
-        }
+        self.restaurants.append(
+            Restaurant(
+                name=name,
+                link=link,
+                rating=rating,
+                total_votes=total_votes,
+            )
+        )
         self.write_restaurant_list_json()
 
     def remove_restaurant(self, name: str):
@@ -51,9 +60,27 @@ class RestaurantList:
         self.write_restaurant_list_json()
 
     def read_restaurant_list_json(self):
+        self.restaurants = []
         with open(self.json_db_path, "r") as f:
-            self.restaurants = json.load(f)
+            restaurants_dict = json.load(f)
+        for item in restaurants_dict:
+            restaurant = Restaurant(
+                name=item["name"],
+                link=item["link"],
+                rating=item["rating"],
+                total_votes=item["total_votes"],
+            )
+            self.restaurants.append(restaurant)
 
     def write_restaurant_list_json(self):
+        restaurants_dict = []
+        for restaurant in self.restaurants:
+            restaurant_dict = {
+                "name": restaurant.name,
+                "link": restaurant.link,
+                "rating": restaurant.rating,
+                "total_votes": restaurant.total_votes
+            }
+            restaurants_dict.append(restaurant_dict)
         with open(self.json_db_path, "w") as f:
-            json.dump(self.restaurants, f)
+            json.dump(restaurants_dict, f)
