@@ -12,4 +12,4 @@ mode = "parallel"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "pip install python-telegram-bot && python main.py"
+args = "pip install python-telegram-bot validators python-dotenv && python main.py"
