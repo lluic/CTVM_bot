@@ -1,9 +1,9 @@
-import json
 import logging
+import os
 
 import validators
+from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
-from telegram.error import BadRequest
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -198,9 +198,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # SETUP
 def setup_bot():
-    with open("CTVM_bot/data/tokens.json") as f:
-        tokens = json.load(f)
-        bot_token = tokens["bot_token"]
+    # Load environment variables, where token is stored
+    load_dotenv()
+    bot_token = os.getenv("BOT_TOKEN")
     application = Application.builder().token(bot_token).build()
 
     application.add_handler(CommandHandler("start", start))
