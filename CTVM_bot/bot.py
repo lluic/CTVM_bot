@@ -1,5 +1,8 @@
 import logging
+import os
 
+import validators
+from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 from telegram.ext import (
     Application,
@@ -10,6 +13,7 @@ from telegram.ext import (
 )
 
 from CTVM_bot.add_restaurant_conversation import AddRestaurant
+from CTVM_bot.edit_location_conversation import EditLocation
 from CTVM_bot.poll_manager import PollManager
 from CTVM_bot.restaurant_list import RestaurantList
 
@@ -49,10 +53,10 @@ async def help_command(
     help_text = (
         "Comandi disponibili:\n"
         "/start - Mostra il menu interattivo\n"
-        "/help - Mostra questo messaggio di aiuto\n"
-        "/lista - Visualizza la lista dei ristoranti con link di Maps e valutazione\n"
-        "/posizione - Seleziona un ristorante per visualizzare la sua posizione\n"
-        "/sondaggio - Seleziona un ristorante per avviare un sondaggio (1-5 stelle, non anonimo)\n"
+        "/help - Mostra i comandi disponibili\n"
+        "/lista - Visualizza la lista dei ristoranti\n"
+        "/posizione - Visualizza o modifica la posizione dei ristoranti\n"
+        "/sondaggio - Apri un sondaggio su un ristorante (1-5 stelle, non anonimo)\n"
         "/aggiungi_ristorante - Aggiungi un nuovo ristorante (nome e link di Google Maps)\n"
         "/elimina_ristorante - Seleziona un ristorante da eliminare dalla lista"
     )
@@ -75,7 +79,7 @@ async def show_list(update: Update | CallbackQuery, context: ContextTypes.DEFAUL
             text += f"Valutazione: {rating:.1f} stelle {stars} ({total_votes} voti)\n\n"
         else:
             text += "Valutazione: non valutato\n\n"
-    await update.message.reply_text(text)
+    await update.message.reply_text(text, disable_web_page_preview=True)
 
 
 ### SELEZIONE DEL RISTORANTE CON PULSANTI INLINE ###
@@ -91,7 +95,7 @@ async def choose_location(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     keyboard = InlineKeyboardMarkup(buttons)
     await update.message.reply_text(
-        "Seleziona un ristorante per visualizzare la posizione:",
+        "Seleziona un ristorante per visualizzare o modificare la posizione:",
         reply_markup=keyboard,
     )
 
@@ -133,20 +137,33 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     data = query.data
-    restaurants = RestaurantList().restaurants
 
     if data == "list":
         await show_list(query, context)
     elif data == "help":
         await help_command(query, context)
     elif data.startswith("location:"):
-        # TODO: the selected restaurant button directly opens the maps link
         # TODO: ?- if possible, the button opens a map popup on telegram -?
         restaurant_name = data.split(":", 1)[1]
         if RestaurantList().has(restaurant_name):
             link = RestaurantList().get_restaurant(restaurant_name).link
-            buttons = [[InlineKeyboardButton("Apri su Google Maps", url=link)]]
+
+            maps_button = None
+            link_valid = False
+            location_button_text = "Aggiungi posizione"
+            if validators.url(link):
+                maps_button = InlineKeyboardButton("Apri su Google Maps", url=link)
+                location_button_text = "Modifica posizione"
+                link_valid = True
+
+            edit_location_button = InlineKeyboardButton(
+                location_button_text, callback_data=f"edit_location:{restaurant_name}"
+            )
+            buttons = [[edit_location_button]]
+            if link_valid:
+                buttons.insert(0, [maps_button])
             keyboard = InlineKeyboardMarkup(buttons)
+
             await query.message.reply_text(
                 text=f"Posizione per {restaurant_name}:", reply_markup=keyboard
             )
@@ -181,11 +198,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # SETUP
 def setup_bot():
-    application = (
-        Application.builder()
-        .token("7360553682:AAHEVY2tjiv6bO4yGoJO7X5mrlCDNwAeZJ8")
-        .build()
-    )
+    # Load environment variables, where token is stored
+    load_dotenv()
+    bot_token = os.getenv("BOT_TOKEN")
+    application = Application.builder().token(bot_token).build()
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))
@@ -194,6 +210,7 @@ def setup_bot():
     application.add_handler(CommandHandler("sondaggio", choose_rate))
     application.add_handler(CommandHandler("elimina_ristorante", choose_delete))
     application.add_handler(AddRestaurant.conversation_handler())
+    application.add_handler(EditLocation.conversation_handler())
     application.add_handler(CallbackQueryHandler(button_handler))
     application.add_handler(PollHandler(PollManager().poll_update_handler))
 

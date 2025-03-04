@@ -55,6 +55,13 @@ class RestaurantList:
     def get_restaurant(self, name: str) -> Restaurant | None:
         return next((r for r in self.restaurants if r.name == name), None)
 
+    def update_location(self, name: str, link: str):
+        for r in self.restaurants:
+            if r.name == name:
+                r.link = link
+                break
+        self.write_restaurant_list_json()
+
     def update_rating_and_votes(self, name: str, rating: float, total_votes: int):
         for r in self.restaurants:
             if r.name == name:

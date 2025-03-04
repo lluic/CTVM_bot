@@ -1,3 +1,4 @@
+import validators
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 from telegram.ext import (
     ConversationHandler,
@@ -11,29 +12,27 @@ from telegram.ext import (
 from CTVM_bot.restaurant_list import RestaurantList
 
 
-class AddRestaurant:
+class EditLocation:
     # States for the AddRestaurant conversation
-    RIST_NAME = range(1)
+    LOCATION = range(1)
 
     @staticmethod
     def conversation_handler():
         return ConversationHandler(
             entry_points=[
-                CommandHandler(
-                    "aggiungi_ristorante", AddRestaurant.add_restaurant_start
-                ),
+                CommandHandler("edit_location", EditLocation.edit_location_start),
                 CallbackQueryHandler(
-                    AddRestaurant.add_restaurant_start, pattern="^add$"
+                    EditLocation.edit_location_start, pattern=f"^edit_location:.*"
                 ),
             ],
             states={
-                AddRestaurant.RIST_NAME: [
+                EditLocation.LOCATION: [
                     MessageHandler(
                         filters.TEXT & ~filters.COMMAND,
-                        AddRestaurant.add_restaurant_name,
+                        EditLocation.edit_location_link,
                     ),
                     CallbackQueryHandler(
-                        AddRestaurant.add_restaurant_cancel, pattern=f"^cancel_add$"
+                        EditLocation.edit_location_cancel, pattern=f"^cancel_link$"
                     ),
                 ],
             },
@@ -41,8 +40,12 @@ class AddRestaurant:
         )
 
     @staticmethod
-    async def add_restaurant_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Starts the restaurant addition conversation, handling both commands and button presses."""
+    async def edit_location_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        restaurant_name = update.callback_query.data.split(":")[1]
+        if not RestaurantList().has(restaurant_name):
+            await update.message.reply_text(text="Errore: ristorante non trovato.")
+            return
+        context.user_data["restaurant_name"] = restaurant_name
 
         # Handle both command and button press (callback_query)
         if update.message:
@@ -55,49 +58,42 @@ class AddRestaurant:
             return  # Failsafe: shouldn't happen
 
         buttons = [
-            [InlineKeyboardButton("Annulla", callback_data=f"cancel_add")],
+            [InlineKeyboardButton("Annulla", callback_data="cancel_link")],
         ]
         keyboard = InlineKeyboardMarkup(buttons)
         # Ask user for restaurant name
         await message.reply_text(
-            "Inserisci il nome del ristorante:", reply_markup=keyboard
+            "Inserisci il link di Google Maps del ristorante:", reply_markup=keyboard
         )
-        # await message.reply_text("Inserisci il nome del ristorante:")
-        return AddRestaurant.RIST_NAME  # Move to the next state
+        return EditLocation.LOCATION  # Move to the next state
 
     @staticmethod
-    async def add_restaurant_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        if RestaurantList().has(update.message.text):
-            await update.message.reply_text(
-                "Errore: Esiste già un ristorante con questo nome."
-            )
-            return ConversationHandler.END
-
-        # context.user_data["new_restaurant_name"] = update.message.text
-        RestaurantList().add_restaurant(
-            name=update.message.text,
-            link="Nessun link",
-            rating=None,
-            total_votes=0,
-        )
-        buttons = [
-            [
-                InlineKeyboardButton(
-                    "Aggiungi posizione",
-                    callback_data=f"edit_location:{update.message.text}",
-                ),
+    async def edit_location_link(
+        update: Update | CallbackQuery, context: ContextTypes.DEFAULT_TYPE
+    ):
+        link = update.message.text
+        if (
+            not "maps.google" in link
+            and not "goo.gl" in link
+            and not "google.com/maps" in link
+        ) or not validators.url(link):
+            buttons = [
+                [InlineKeyboardButton("Annulla", callback_data="cancel_link")],
             ]
-        ]
-        keyboard = InlineKeyboardMarkup(buttons)
-        await update.message.reply_text(
-            "Ristorante aggiunto con successo!",
-            reply_markup=keyboard,
-        )
-        # await update.message.reply_text("Ristorante aggiunto con successo!")
+            keyboard = InlineKeyboardMarkup(buttons)
+            await update.message.reply_text(
+                "Errore: Link non valido. Assicurati che sia un link di Google Maps.",
+                reply_markup=keyboard,
+            )
+            return EditLocation.LOCATION
+
+        RestaurantList().update_location(context.user_data["restaurant_name"], link)
+
+        await update.message.reply_text(f"Posizione aggiornata con successo!")
         return ConversationHandler.END
 
     @staticmethod
-    async def add_restaurant_cancel(
+    async def edit_location_cancel(
         update: Update | CallbackQuery, context: ContextTypes.DEFAULT_TYPE
     ):
         # Handle both command and button press (callback_query)
@@ -110,5 +106,5 @@ class AddRestaurant:
         else:
             return  # Failsafe: shouldn't happen
 
-        await message.reply_text("Aggiunta ristorante annullata.")
+        await message.reply_text("Aggiornamento della posizione annullato.")
         return ConversationHandler.END
