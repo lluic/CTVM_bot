@@ -10,12 +10,12 @@ class Restaurant:
         self.total_votes = total_votes
 
 
-class RestaurantList:
+class RestaurantDataManager:
     _instance = None
 
     def __new__(cls):
         if cls._instance is None:
-            cls._instance = super(RestaurantList, cls).__new__(cls)
+            cls._instance = super(RestaurantDataManager, cls).__new__(cls)
             cls._instance._initialized = False
         return cls._instance
 

@@ -9,7 +9,7 @@ from telegram.ext import (
     CallbackQueryHandler,
 )
 
-from CTVM_bot.restaurant_list import RestaurantList
+from CTVM_bot.restaurant_data_manager import RestaurantDataManager
 
 
 class EditLocation:
@@ -42,7 +42,7 @@ class EditLocation:
     @staticmethod
     async def edit_location_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         restaurant_name = update.callback_query.data.split(":")[1]
-        if not RestaurantList().has(restaurant_name):
+        if not RestaurantDataManager().has(restaurant_name):
             await update.message.reply_text(text="Errore: ristorante non trovato.")
             return
         context.user_data["restaurant_name"] = restaurant_name
@@ -87,7 +87,9 @@ class EditLocation:
             )
             return EditLocation.LOCATION
 
-        RestaurantList().update_location(context.user_data["restaurant_name"], link)
+        RestaurantDataManager().update_location(
+            context.user_data["restaurant_name"], link
+        )
 
         await update.message.reply_text(f"Posizione aggiornata con successo!")
         return ConversationHandler.END

@@ -8,7 +8,7 @@ from telegram.ext import (
     CallbackQueryHandler,
 )
 
-from CTVM_bot.restaurant_list import RestaurantList
+from CTVM_bot.restaurant_data_manager import RestaurantDataManager
 
 
 class AddRestaurant:
@@ -67,14 +67,14 @@ class AddRestaurant:
 
     @staticmethod
     async def add_restaurant_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        if RestaurantList().has(update.message.text):
+        if RestaurantDataManager().has(update.message.text):
             await update.message.reply_text(
                 "Errore: Esiste già un ristorante con questo nome."
             )
             return ConversationHandler.END
 
         # context.user_data["new_restaurant_name"] = update.message.text
-        RestaurantList().add_restaurant(
+        RestaurantDataManager().add_restaurant(
             name=update.message.text,
             link="Nessun link",
             rating=None,

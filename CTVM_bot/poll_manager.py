@@ -3,7 +3,7 @@ import logging
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from CTVM_bot.restaurant_list import RestaurantList
+from CTVM_bot.restaurant_data_manager import RestaurantDataManager
 
 
 class PollManager:
@@ -37,7 +37,7 @@ class PollManager:
                 average = rating_sum / total_votes
             else:
                 average = 0
-            RestaurantList().update_rating_and_votes(
+            RestaurantDataManager().update_rating_and_votes(
                 name=restaurant_name,
                 rating=average,
                 total_votes=total_votes,
