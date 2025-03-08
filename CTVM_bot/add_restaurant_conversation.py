@@ -9,6 +9,7 @@ from telegram.ext import (
 )
 
 from CTVM_bot.restaurant_data_manager import RestaurantDataManager
+from CTVM_bot.shared_buttons import SharedButtons
 
 
 class AddRestaurant:
@@ -86,6 +87,7 @@ class AddRestaurant:
                     "Aggiungi posizione",
                     callback_data=f"edit_location:{update.message.text}",
                 ),
+                SharedButtons.back_to_home_button(),
             ]
         ]
         keyboard = InlineKeyboardMarkup(buttons)
@@ -93,7 +95,6 @@ class AddRestaurant:
             "Ristorante aggiunto con successo!",
             reply_markup=keyboard,
         )
-        # await update.message.reply_text("Ristorante aggiunto con successo!")
         return ConversationHandler.END
 
     @staticmethod
@@ -110,5 +111,9 @@ class AddRestaurant:
         else:
             return  # Failsafe: shouldn't happen
 
-        await message.reply_text("Aggiunta ristorante annullata.")
+        back_to_home_button = SharedButtons.back_to_home_button()
+        await message.reply_text(
+            "Aggiunta ristorante annullata.",
+            reply_markup=InlineKeyboardMarkup([[back_to_home_button]]),
+        )
         return ConversationHandler.END

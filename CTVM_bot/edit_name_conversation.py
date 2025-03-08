@@ -1,4 +1,3 @@
-import validators
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 from telegram.ext import (
     ConversationHandler,
@@ -10,31 +9,29 @@ from telegram.ext import (
 )
 
 from CTVM_bot.restaurant_data_manager import RestaurantDataManager
-from CTVM_bot.shared_buttons import SharedButtons
-from CTVM_bot.show_restaurant import ShowRestaurant
 
 
-class EditLocation:
+class EditName:
     # States for the AddRestaurant conversation
-    LOCATION = range(1)
+    NAME = range(1)
 
     @staticmethod
     def conversation_handler():
         return ConversationHandler(
             entry_points=[
-                CommandHandler("edit_location", EditLocation.edit_location_start),
+                CommandHandler("edit_name", EditName.edit_name_start),
                 CallbackQueryHandler(
-                    EditLocation.edit_location_start, pattern=f"^edit_location:.*"
+                    EditName.edit_name_start, pattern=f"^edit_name:.*"
                 ),
             ],
             states={
-                EditLocation.LOCATION: [
+                EditName.NAME: [
                     MessageHandler(
                         filters.TEXT & ~filters.COMMAND,
-                        EditLocation.edit_location_link,
+                        EditName.edit_name,
                     ),
                     CallbackQueryHandler(
-                        EditLocation.edit_location_cancel, pattern=f"^cancel_link$"
+                        EditName.edit_name_cancel, pattern=f"^cancel_edit_name$"
                     ),
                 ],
             },
@@ -42,7 +39,7 @@ class EditLocation:
         )
 
     @staticmethod
-    async def edit_location_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def edit_name_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         restaurant_name = update.callback_query.data.split(":")[1]
         if not RestaurantDataManager().has(restaurant_name):
             await update.message.reply_text(text="Errore: ristorante non trovato.")
@@ -60,49 +57,46 @@ class EditLocation:
             return  # Failsafe: shouldn't happen
 
         buttons = [
-            [InlineKeyboardButton("Annulla", callback_data="cancel_link")],
+            [InlineKeyboardButton("Annulla", callback_data="cancel_edit_name")],
         ]
+        keyboard = InlineKeyboardMarkup(buttons)
         # Ask user for restaurant name
         await message.reply_text(
-            "Inserisci il link di Google Maps del ristorante:",
-            reply_markup=InlineKeyboardMarkup(buttons),
+            "Inserisci il nuovo nome del ristorante:", reply_markup=keyboard
         )
-        return EditLocation.LOCATION  # Move to the next state
+        return EditName.NAME  # Move to the next state
 
     @staticmethod
-    async def edit_location_link(
+    async def edit_name(
         update: Update | CallbackQuery, context: ContextTypes.DEFAULT_TYPE
     ):
-        link = update.message.text
-        if (
-            not "maps.google" in link
-            and not "goo.gl" in link
-            and not "google.com/maps" in link
-        ) or not validators.url(link):
-            buttons = [
-                [InlineKeyboardButton("Annulla", callback_data="cancel_link")],
-            ]
+        name = update.message.text
+        buttons = [
+            [InlineKeyboardButton("Annulla", callback_data="cancel_edit_name$")],
+        ]
+        keyboard = InlineKeyboardMarkup(buttons)
+
+        if RestaurantDataManager().has(name):
             await update.message.reply_text(
-                "Errore: Link non valido. Assicurati che sia un link di Google Maps.",
-                reply_markup=InlineKeyboardMarkup(buttons),
+                "Esiste già un ristorante con questo nome. Inserisci un nome diverso.",
+                reply_markup=keyboard,
             )
-            return EditLocation.LOCATION
+            return EditName.NAME
 
-        RestaurantDataManager().update_location(
-            context.user_data["restaurant_name"], link
-        )
+        if name == "":
+            await update.message.reply_text(
+                "Errore: Nome non valido. Riprova.",
+                reply_markup=keyboard,
+            )
+            return EditName.NAME
 
-        back_button = SharedButtons.back_to_restaurant_button(
-            context.user_data["restaurant_name"]
-        )
-        await update.message.reply_text(
-            f"Posizione aggiornata con successo!",
-            reply_markup=InlineKeyboardMarkup([[back_button]]),
-        )
+        RestaurantDataManager().update_name(context.user_data["restaurant_name"], name)
+
+        await update.message.reply_text(f"Nome aggiornato con successo!")
         return ConversationHandler.END
 
     @staticmethod
-    async def edit_location_cancel(
+    async def edit_name_cancel(
         update: Update | CallbackQuery, context: ContextTypes.DEFAULT_TYPE
     ):
         # Handle both command and button press (callback_query)
@@ -115,11 +109,5 @@ class EditLocation:
         else:
             return  # Failsafe: shouldn't happen
 
-        back_button = SharedButtons.back_to_restaurant_button(
-            context.user_data["restaurant_name"]
-        )
-        await message.reply_text(
-            f"Aggiornamento della posizione annullato.",
-            reply_markup=InlineKeyboardMarkup([[back_button]]),
-        )
+        await message.reply_text("Aggiornamento del nome annullato.")
         return ConversationHandler.END

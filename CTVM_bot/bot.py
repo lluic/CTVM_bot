@@ -26,12 +26,22 @@ logging.basicConfig(
 
 
 ### COMANDI BASE E MENU INTERATTIVO ###
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def start(update: Update | CallbackQuery, context: ContextTypes.DEFAULT_TYPE):
     """Mostra un menu interattivo con pulsanti inline."""
+    # Handle both command and button press (callback_query)
+    if update.message:
+        message = update.message  # Command
+    elif update.callback_query:
+        query = update.callback_query
+        await query.answer()  # Acknowledge button press
+        message = query.message  # Message containing the inline keyboard
+    else:
+        return  # Failsafe: shouldn't happen
+
     buttons = [
-        [InlineKeyboardButton("Lista Ristoranti", callback_data="list")],
-        [InlineKeyboardButton("Aggiungi Ristorante", callback_data="add")],
-        [InlineKeyboardButton("Aiuto", callback_data="help")],
+        [InlineKeyboardButton("📋  Lista Ristoranti", callback_data="list")],
+        [InlineKeyboardButton("➕  Aggiungi Ristorante", callback_data="add")],
+        [InlineKeyboardButton("❔  Aiuto", callback_data="help")],
     ]
     keyboard = InlineKeyboardMarkup(buttons)
     await update.message.reply_text(
@@ -48,11 +58,11 @@ async def help_command(
         "/start - Mostra il menu interattivo\n"
         "/help - Mostra i comandi disponibili\n"
         "/lista - Visualizza la lista dei ristoranti\n"
-        # "/posizione - Visualizza o modifica la posizione dei ristoranti\n"
-        # "/sondaggio - Apri un sondaggio su un ristorante (1-5 stelle, non anonimo)\n"
-        "/aggiungi_ristorante - Aggiungi un nuovo ristorante (nome e link di Google Maps)\n"
-        # "/elimina_ristorante - Seleziona un ristorante da eliminare dalla lista"
+        "/aggiungi_ristorante - Aggiungi un nuovo ristorante\n"
     )
+    # "/posizione - Visualizza o modifica la posizione dei ristoranti\n"
+    # "/sondaggio - Apri un sondaggio su un ristorante (1-5 stelle, non anonimo)\n"
+    # "/elimina_ristorante - Seleziona un ristorante da eliminare dalla lista"
     await update.message.reply_text(help_text)
 
 
@@ -112,7 +122,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     data = query.data
 
-    if data == "list":
+    if data == "home":
+        await start(query, context)
+    elif data == "list":
         await ShowList.show_list(query, context)
     elif data == "help":
         await help_command(query, context)
@@ -120,6 +132,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await ShowRestaurant.show_restaurant(query, context)
     elif data.startswith("edit_restaurant:"):
         await ShowRestaurant.edit_restaurant(query, context)
+    elif data.startswith("delete_restaurant:"):
+        await ShowRestaurant.delete_restaurant(query, context)
     # elif data.startswith("location:"):
     #     # TODO: ?- if possible, the button opens a map popup on telegram -?
     #     restaurant_name = data.split(":", 1)[1]

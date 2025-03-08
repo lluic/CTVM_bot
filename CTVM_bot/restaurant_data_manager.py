@@ -55,6 +55,13 @@ class RestaurantDataManager:
     def get_restaurant(self, name: str) -> Restaurant | None:
         return next((r for r in self.restaurants if r.name == name), None)
 
+    def update_name(self, name: str, new_name: str):
+        for r in self.restaurants:
+            if r.name == name:
+                r.name = new_name
+                break
+        self.write_restaurant_list_json()
+
     def update_location(self, name: str, link: str):
         for r in self.restaurants:
             if r.name == name:
