@@ -13,7 +13,7 @@ from CTVM_bot.shared_buttons import SharedButtons
 
 
 class AddRestaurant:
-    # States for the AddRestaurant conversation
+    # States for the conversation
     RIST_NAME = range(1)
 
     @staticmethod
@@ -58,12 +58,11 @@ class AddRestaurant:
         buttons = [
             [InlineKeyboardButton("Annulla", callback_data=f"cancel_add")],
         ]
-        keyboard = InlineKeyboardMarkup(buttons)
-        # Ask user for restaurant name
+
         await message.reply_text(
-            "Inserisci il nome del ristorante:", reply_markup=keyboard
+            "Inserisci il nome del ristorante:",
+            reply_markup=InlineKeyboardMarkup(buttons),
         )
-        # await message.reply_text("Inserisci il nome del ristorante:")
         return AddRestaurant.RIST_NAME  # Move to the next state
 
     @staticmethod
@@ -74,7 +73,6 @@ class AddRestaurant:
             )
             return ConversationHandler.END
 
-        # context.user_data["new_restaurant_name"] = update.message.text
         RestaurantDataManager().add_restaurant(
             name=update.message.text,
             link="Nessun link",
@@ -90,10 +88,9 @@ class AddRestaurant:
                 SharedButtons.back_to_home_button(),
             ]
         ]
-        keyboard = InlineKeyboardMarkup(buttons)
         await update.message.reply_text(
             "Ristorante aggiunto con successo!",
-            reply_markup=keyboard,
+            reply_markup=InlineKeyboardMarkup(buttons),
         )
         return ConversationHandler.END
 

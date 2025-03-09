@@ -48,9 +48,10 @@ class ShowRestaurant:
             [delete_button],
             [back_to_list_button],
         ]
-        keyboard = InlineKeyboardMarkup(buttons)
 
-        await query.message.reply_text(f"🍽️  {restaurant_name}", reply_markup=keyboard)
+        await query.message.reply_text(
+            f"🍽️  {restaurant_name}", reply_markup=InlineKeyboardMarkup(buttons)
+        )
 
     @staticmethod
     async def edit_restaurant(query: CallbackQuery, context: ContextTypes.DEFAULT_TYPE):
@@ -73,10 +74,9 @@ class ShowRestaurant:
             ],
             [SharedButtons.back_to_restaurant_button(restaurant_name)],
         ]
-        keyboard = InlineKeyboardMarkup(buttons)
 
         await query.message.reply_text(
-            f"Modifica {restaurant_name}", reply_markup=keyboard
+            f"Modifica {restaurant_name}", reply_markup=InlineKeyboardMarkup(buttons)
         )
 
     @staticmethod
@@ -97,14 +97,14 @@ class ShowRestaurant:
             [
                 InlineKeyboardButton(
                     "Annulla",
-                    callback_data=f"cancel_delete",
+                    callback_data=f"restaurant:{restaurant_name}",
                 )
             ],
         ]
-        keyboard = InlineKeyboardMarkup(buttons)
 
         await query.message.reply_text(
-            f"Sicuro di voler eliminare {restaurant_name}?!", reply_markup=keyboard
+            f"Sicuro di voler eliminare {restaurant_name}?!",
+            reply_markup=InlineKeyboardMarkup(buttons),
         )
 
     @staticmethod
@@ -116,8 +116,9 @@ class ShowRestaurant:
             return
 
         RestaurantDataManager().remove_restaurant(restaurant_name)
-        await query.message.reply_text(text="Ristorante eliminato con successo.")
 
-    @staticmethod
-    async def cancel_delete(query: CallbackQuery, context: ContextTypes.DEFAULT_TYPE):
-        await query.message.reply_text(text="Operazione annullata.")
+        button = SharedButtons.back_to_list_button()
+        await query.message.reply_text(
+            text="Ristorante eliminato con successo.",
+            reply_markup=InlineKeyboardMarkup([[button]]),
+        )

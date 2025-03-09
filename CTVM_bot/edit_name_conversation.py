@@ -9,10 +9,11 @@ from telegram.ext import (
 )
 
 from CTVM_bot.restaurant_data_manager import RestaurantDataManager
+from CTVM_bot.shared_buttons import SharedButtons
 
 
 class EditName:
-    # States for the AddRestaurant conversation
+    # States for the conversation
     NAME = range(1)
 
     @staticmethod
@@ -59,12 +60,12 @@ class EditName:
         buttons = [
             [InlineKeyboardButton("Annulla", callback_data="cancel_edit_name")],
         ]
-        keyboard = InlineKeyboardMarkup(buttons)
-        # Ask user for restaurant name
+
         await message.reply_text(
-            "Inserisci il nuovo nome del ristorante:", reply_markup=keyboard
+            "Inserisci il nuovo nome del ristorante:",
+            reply_markup=InlineKeyboardMarkup(buttons),
         )
-        return EditName.NAME  # Move to the next state
+        return EditName.NAME
 
     @staticmethod
     async def edit_name(
@@ -72,7 +73,7 @@ class EditName:
     ):
         name = update.message.text
         buttons = [
-            [InlineKeyboardButton("Annulla", callback_data="cancel_edit_name$")],
+            [InlineKeyboardButton("Annulla", callback_data="cancel_edit_name")],
         ]
         keyboard = InlineKeyboardMarkup(buttons)
 
@@ -92,7 +93,13 @@ class EditName:
 
         RestaurantDataManager().update_name(context.user_data["restaurant_name"], name)
 
-        await update.message.reply_text(f"Nome aggiornato con successo!")
+        back_button = SharedButtons.back_to_restaurant_button(
+            context.user_data["restaurant_name"]
+        )
+        await update.message.reply_text(
+            f"Nome aggiornato con successo!",
+            reply_markup=InlineKeyboardMarkup([[back_button]]),
+        )
         return ConversationHandler.END
 
     @staticmethod
@@ -109,5 +116,11 @@ class EditName:
         else:
             return  # Failsafe: shouldn't happen
 
-        await message.reply_text("Aggiornamento del nome annullato.")
+        back_button = SharedButtons.back_to_restaurant_button(
+            context.user_data["restaurant_name"]
+        )
+        await message.reply_text(
+            "Aggiornamento del nome annullato.",
+            reply_markup=InlineKeyboardMarkup([[back_button]]),
+        )
         return ConversationHandler.END

@@ -11,11 +11,10 @@ from telegram.ext import (
 
 from CTVM_bot.restaurant_data_manager import RestaurantDataManager
 from CTVM_bot.shared_buttons import SharedButtons
-from CTVM_bot.show_restaurant import ShowRestaurant
 
 
 class EditLocation:
-    # States for the AddRestaurant conversation
+    # States for the conversation
     LOCATION = range(1)
 
     @staticmethod
