@@ -48,10 +48,13 @@ async def start(update: Update | CallbackQuery, context: ContextTypes.DEFAULT_TY
         [SharedButtons.add_restaurant_button()],
         [InlineKeyboardButton("❔  Aiuto", callback_data="help")],
     ]
-    keyboard = InlineKeyboardMarkup(buttons)
-    await message.reply_text(
-        "Benvenuto! Scegli un'opzione dal menu:", reply_markup=keyboard
-    )
+    text = "Benvenuto! Scegli un'opzione dal menu:"
+    try:
+        await message.edit_text(text, reply_markup=InlineKeyboardMarkup(buttons))
+    except:
+        await message.chat.send_message(
+            text, reply_markup=InlineKeyboardMarkup(buttons)
+        )
 
 
 async def help_command(
@@ -63,7 +66,10 @@ async def help_command(
         "/start - Mostra il menu interattivo\n"
         "/help - Mostra i comandi disponibili\n"
     )
-    await update.message.reply_text(help_text)
+    back_button = SharedButtons.back_to_home_button()
+    await update.message.edit_text(
+        help_text, reply_markup=InlineKeyboardMarkup([[back_button]])
+    )
 
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -77,7 +83,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await ShowList.show_list(query, context)
     elif data == "add_restaurant":
         await AddRestaurant.add_restaurant_start(query, context)
-        await ShowRestaurant.show_restaurant(query, context)
     elif data == "help":
         await help_command(query, context)
     elif data.startswith("restaurant:"):
@@ -103,7 +108,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await query.message.reply_text(text="Errore: ristorante non trovato.")
     else:
-        await query.message.reply_text(text="Azione non riconosciuta.")
+        await query.message.edit_text(
+            text="Azione non riconosciuta.",
+            reply_markup=InlineKeyboardMarkup([[SharedButtons.back_to_list_button()]]),
+        )
 
 
 def setup_bot():

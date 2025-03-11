@@ -20,7 +20,7 @@ class EditLocation:
     async def edit_location_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         restaurant_name = update.callback_query.data.split(":")[1]
         if not RestaurantDataManager().has(restaurant_name):
-            await update.message.reply_text(text="Errore: ristorante non trovato.")
+            await update.message.edit_text(text="Errore: ristorante non trovato.")
             return
         context.user_data["restaurant_name"] = restaurant_name
 
@@ -38,7 +38,7 @@ class EditLocation:
             [InlineKeyboardButton("Annulla", callback_data="cancel_edit_location")],
         ]
 
-        await message.reply_text(
+        await message.edit_text(
             "Inserisci il link di Google Maps del ristorante:",
             reply_markup=InlineKeyboardMarkup(buttons),
         )
@@ -58,7 +58,7 @@ class EditLocation:
             back_button = InlineKeyboardButton(
                 "Annulla", callback_data="cancel_edit_location"
             )
-            await update.message.reply_text(
+            await update.message.chat.send_message(
                 "Errore: Link non valido. Assicurati che sia un link di Google Maps.",
                 reply_markup=InlineKeyboardMarkup([[back_button]]),
             )
@@ -67,7 +67,7 @@ class EditLocation:
         RestaurantDataManager().update_location(restaurant_name, link)
 
         back_button = SharedButtons.back_to_restaurant_button(restaurant_name)
-        await update.message.reply_text(
+        await update.message.chat.send_message(
             f"Posizione aggiornata con successo!",
             reply_markup=InlineKeyboardMarkup([[back_button]]),
         )
@@ -81,7 +81,7 @@ class EditLocation:
         back_button = SharedButtons.back_to_restaurant_button(
             context.user_data["restaurant_name"]
         )
-        await query.message.reply_text(
+        await query.message.edit_text(
             "Modifica annullata",
             reply_markup=InlineKeyboardMarkup([[back_button]]),
         )

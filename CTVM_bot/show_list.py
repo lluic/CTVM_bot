@@ -14,7 +14,7 @@ class ShowList:
         """Mostra la lista dei ristoranti e la loro valutazione."""
         restaurants = RestaurantDataManager().restaurants
         if not restaurants:
-            await update.message.reply_text("Errore: Nessun ristorante disponibile.")
+            await update.message.edit_text("Errore: Nessun ristorante disponibile.")
             return
 
         buttons = [
@@ -33,7 +33,7 @@ class ShowList:
         buttons.append([SharedButtons.add_restaurant_button()])
         buttons.append([SharedButtons.back_to_home_button()])
 
-        await update.message.reply_text(
+        await update.message.edit_text(
             "Seleziona un ristorante per visualizzarlo o modificarlo:",
             reply_markup=InlineKeyboardMarkup(buttons),
         )

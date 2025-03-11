@@ -19,7 +19,7 @@ class EditName:
     async def edit_name_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         restaurant_name = update.callback_query.data.split(":")[1]
         if not RestaurantDataManager().has(restaurant_name):
-            await update.message.reply_text(text="Errore: ristorante non trovato.")
+            await update.message.edit_text(text="Errore: ristorante non trovato.")
             return
         context.user_data["restaurant_name"] = restaurant_name
 
@@ -37,7 +37,7 @@ class EditName:
             [InlineKeyboardButton("Annulla", callback_data="cancel_edit_name")],
         ]
 
-        await message.reply_text(
+        await message.edit_text(
             "Inserisci il nuovo nome del ristorante:",
             reply_markup=InlineKeyboardMarkup(buttons),
         )
@@ -55,14 +55,14 @@ class EditName:
         )
 
         if RestaurantDataManager().has(name):
-            await update.message.reply_text(
+            await update.message.chat.send_message(
                 "Esiste già un ristorante con questo nome. Inserisci un nome diverso.",
                 reply_markup=InlineKeyboardMarkup([[cancel_button]]),
             )
             return NAME
 
         if name == "":
-            await update.message.reply_text(
+            await update.message.chat.send_message(
                 "Errore: Nome non valido. Riprova.",
                 reply_markup=InlineKeyboardMarkup([[cancel_button]]),
             )
@@ -71,7 +71,7 @@ class EditName:
         RestaurantDataManager().update_name(context.user_data["restaurant_name"], name)
 
         back_button = SharedButtons.back_to_restaurant_button(name)
-        await update.message.reply_text(
+        await update.message.chat.send_message(
             f"Nome aggiornato con successo!",
             reply_markup=InlineKeyboardMarkup([[back_button]]),
         )
@@ -85,7 +85,7 @@ class EditName:
         back_button = SharedButtons.back_to_restaurant_button(
             context.user_data["restaurant_name"]
         )
-        await query.message.reply_text(
+        await query.message.edit_text(
             "Modifica annullata",
             reply_markup=InlineKeyboardMarkup([[back_button]]),
         )

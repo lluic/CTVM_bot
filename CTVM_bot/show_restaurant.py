@@ -12,7 +12,7 @@ class ShowRestaurant:
     async def show_restaurant(query: CallbackQuery, context: ContextTypes.DEFAULT_TYPE):
         restaurant_name = query.data.split(":")[1]
         if not RestaurantDataManager().has(restaurant_name):
-            await query.message.reply_text(text="Errore: ristorante non trovato.")
+            await query.message.edit_text(text="Errore: ristorante non trovato.")
             return ConversationHandler.END
 
         restaurant = RestaurantDataManager().get_restaurant(restaurant_name)
@@ -55,7 +55,7 @@ class ShowRestaurant:
             if restaurant.rating is not None
             else ""
         )
-        await query.message.reply_text(
+        await query.message.edit_text(
             f"🍽️  {restaurant_name}\n"
             f"{rating_string}"
             f"{restaurant.total_votes} voti",
@@ -66,7 +66,7 @@ class ShowRestaurant:
     async def edit_restaurant(query: CallbackQuery, context: ContextTypes.DEFAULT_TYPE):
         restaurant_name = query.data.split(":")[1]
         if not RestaurantDataManager().has(restaurant_name):
-            await query.message.reply_text(text="Errore: ristorante non trovato.")
+            await query.message.edit_text(text="Errore: ristorante non trovato.")
             return
 
         buttons = [
@@ -84,7 +84,7 @@ class ShowRestaurant:
             [SharedButtons.back_to_restaurant_button(restaurant_name)],
         ]
 
-        await query.message.reply_text(
+        await query.message.edit_text(
             f"Modifica {restaurant_name}", reply_markup=InlineKeyboardMarkup(buttons)
         )
 
@@ -94,7 +94,7 @@ class ShowRestaurant:
     ):
         restaurant_name = query.data.split(":")[1]
         if not RestaurantDataManager().has(restaurant_name):
-            await query.message.reply_text(text="Errore: ristorante non trovato.")
+            await query.message.edit_text(text="Errore: ristorante non trovato.")
             return
 
         buttons = [
@@ -106,7 +106,7 @@ class ShowRestaurant:
             [SharedButtons.back_to_restaurant_button(restaurant_name, "Annulla")],
         ]
 
-        await query.message.reply_text(
+        await query.message.edit_text(
             f"Sicuro di voler eliminare {restaurant_name}?!",
             reply_markup=InlineKeyboardMarkup(buttons),
         )
@@ -116,13 +116,13 @@ class ShowRestaurant:
         await query.answer()
         restaurant_name = query.data.split(":")[1]
         if not RestaurantDataManager().has(restaurant_name):
-            await query.message.reply_text(text="Errore: ristorante non trovato.")
+            await query.message.edit_text(text="Errore: ristorante non trovato.")
             return
 
         RestaurantDataManager().remove_restaurant(restaurant_name)
 
         button = SharedButtons.back_to_list_button()
-        await query.message.reply_text(
+        await query.message.edit_text(
             text="Ristorante eliminato con successo.",
             reply_markup=InlineKeyboardMarkup([[button]]),
         )

@@ -32,7 +32,7 @@ class AddRestaurant:
 
         buttons = [[SharedButtons.back_to_home_button("Annulla")]]
 
-        await message.reply_text(
+        await message.edit_text(
             "Inserisci il nome del ristorante:",
             reply_markup=InlineKeyboardMarkup(buttons),
         )
@@ -46,7 +46,7 @@ class AddRestaurant:
         restaurant_name = restaurant_name.replace(":", ";")
 
         if RestaurantDataManager().has(restaurant_name):
-            await update.message.reply_text(
+            await update.message.chat.send_message(
                 "Errore: esiste già un ristorante con questo nome."
             )
             return ASK_NAME
@@ -66,7 +66,7 @@ class AddRestaurant:
             ],
             [SharedButtons.back_to_home_button()],
         ]
-        await update.message.reply_text(
+        await update.message.chat.send_message(
             "Ristorante aggiunto con successo!",
             reply_markup=InlineKeyboardMarkup(buttons),
         )
