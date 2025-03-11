@@ -35,8 +35,6 @@ class RestaurantDataManager:
         rating: float | None,
         total_votes: int,
     ):
-        name = name.replace(":", ",")
-
         self.restaurants.append(
             Restaurant(
                 name=name,

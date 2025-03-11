@@ -43,6 +43,7 @@ class AddRestaurant:
     async def add_restaurant_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handles user input for the restaurant name."""
         restaurant_name = update.message.text
+        restaurant_name = restaurant_name.replace(":", ";")
 
         if RestaurantDataManager().has(restaurant_name):
             await update.message.reply_text(

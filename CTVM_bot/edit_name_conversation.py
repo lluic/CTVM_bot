@@ -48,6 +48,8 @@ class EditName:
         update: Update | CallbackQuery, context: ContextTypes.DEFAULT_TYPE
     ):
         name = update.message.text
+        name = name.replace(":", ";")
+
         cancel_button = InlineKeyboardButton(
             "Annulla", callback_data="cancel_edit_name"
         )
