@@ -17,20 +17,20 @@ class ShowList:
             await update.message.reply_text("Errore: Nessun ristorante disponibile.")
             return
 
-        buttons = []
-        for r in restaurants:
-            button_string = r.name
-            if r.rating is not None and r.total_votes > 0:
-                stars = rating_to_stars(r.rating)
-                button_string += f"  {stars} ({r.rating:.1f})"
-            buttons.append(
-                [
-                    InlineKeyboardButton(
-                        button_string, callback_data=f"restaurant:{r.name}"
-                    )
-                ]
-            )
-
+        buttons = [
+            [
+                InlineKeyboardButton(
+                    (
+                        f"{r.name}  {rating_to_stars(r.rating)} ({r.rating:.1f})"
+                        if r.rating is not None and r.total_votes > 0
+                        else r.name
+                    ),
+                    callback_data=f"restaurant:{r.name}",
+                )
+            ]
+            for r in restaurants
+        ]
+        buttons.append([SharedButtons.add_restaurant_button()])
         buttons.append([SharedButtons.back_to_home_button()])
 
         await update.message.reply_text(

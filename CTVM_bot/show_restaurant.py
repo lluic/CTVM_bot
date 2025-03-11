@@ -1,9 +1,10 @@
 import validators
 from telegram import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ContextTypes
+from telegram.ext import ContextTypes, ConversationHandler
 
 from CTVM_bot.restaurant_data_manager import RestaurantDataManager
 from CTVM_bot.shared_buttons import SharedButtons
+from CTVM_bot.utils import rating_to_stars
 
 
 class ShowRestaurant:
@@ -12,7 +13,7 @@ class ShowRestaurant:
         restaurant_name = query.data.split(":")[1]
         if not RestaurantDataManager().has(restaurant_name):
             await query.message.reply_text(text="Errore: ristorante non trovato.")
-            return
+            return ConversationHandler.END
 
         restaurant = RestaurantDataManager().get_restaurant(restaurant_name)
         if validators.url(restaurant.link):
@@ -49,8 +50,16 @@ class ShowRestaurant:
             [back_to_list_button],
         ]
 
+        rating_string = (
+            f"{rating_to_stars(restaurant.rating)}  ({restaurant.rating:.1f})\n"
+            if restaurant.rating is not None
+            else ""
+        )
         await query.message.reply_text(
-            f"🍽️  {restaurant_name}", reply_markup=InlineKeyboardMarkup(buttons)
+            f"🍽️  {restaurant_name}\n"
+            f"{rating_string}"
+            f"{restaurant.total_votes} voti",
+            reply_markup=InlineKeyboardMarkup(buttons),
         )
 
     @staticmethod
@@ -94,12 +103,7 @@ class ShowRestaurant:
                     "Elimina", callback_data=f"confirm_delete:{restaurant_name}"
                 )
             ],
-            [
-                InlineKeyboardButton(
-                    "Annulla",
-                    callback_data=f"restaurant:{restaurant_name}",
-                )
-            ],
+            [SharedButtons.back_to_restaurant_button(restaurant_name, "Annulla")],
         ]
 
         await query.message.reply_text(

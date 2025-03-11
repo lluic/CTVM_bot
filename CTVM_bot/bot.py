@@ -11,11 +11,17 @@ from telegram.ext import (
     PollHandler,
 )
 
-from CTVM_bot.add_restaurant_conversation import AddRestaurant
-from CTVM_bot.edit_location_conversation import EditLocation
-from CTVM_bot.edit_name_conversation import EditName
+from CTVM_bot.add_restaurant_conversation import (
+    AddRestaurant,
+    add_restaurant_conv_handler,
+)
+from CTVM_bot.edit_location_conversation import (
+    edit_location_conversation_handler,
+)
+from CTVM_bot.edit_name_conversation import edit_name_conversation_handler
 from CTVM_bot.poll_manager import PollManager
 from CTVM_bot.restaurant_data_manager import RestaurantDataManager
+from CTVM_bot.shared_buttons import SharedButtons
 from CTVM_bot.show_list import ShowList
 from CTVM_bot.show_restaurant import ShowRestaurant
 
@@ -39,11 +45,11 @@ async def start(update: Update | CallbackQuery, context: ContextTypes.DEFAULT_TY
 
     buttons = [
         [InlineKeyboardButton("📋  Lista Ristoranti", callback_data="list")],
-        [InlineKeyboardButton("➕  Aggiungi Ristorante", callback_data="add")],
+        [SharedButtons.add_restaurant_button()],
         [InlineKeyboardButton("❔  Aiuto", callback_data="help")],
     ]
     keyboard = InlineKeyboardMarkup(buttons)
-    await update.message.reply_text(
+    await message.reply_text(
         "Benvenuto! Scegli un'opzione dal menu:", reply_markup=keyboard
     )
 
@@ -56,8 +62,6 @@ async def help_command(
         "Comandi disponibili:\n"
         "/start - Mostra il menu interattivo\n"
         "/help - Mostra i comandi disponibili\n"
-        "/lista - Visualizza la lista dei ristoranti\n"
-        "/aggiungi_ristorante - Aggiungi un nuovo ristorante\n"
     )
     await update.message.reply_text(help_text)
 
@@ -71,6 +75,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await start(query, context)
     elif data == "list":
         await ShowList.show_list(query, context)
+    elif data == "add_restaurant":
+        await AddRestaurant.add_restaurant_start(query, context)
+        await ShowRestaurant.show_restaurant(query, context)
     elif data == "help":
         await help_command(query, context)
     elif data.startswith("restaurant:"):
@@ -111,9 +118,9 @@ def setup_bot():
     application.add_handler(CommandHandler("lista", ShowList.show_list))
 
     # Register conversation handlers
-    application.add_handler(AddRestaurant.conversation_handler())
-    application.add_handler(EditLocation.conversation_handler())
-    application.add_handler(EditName.conversation_handler())
+    application.add_handler(add_restaurant_conv_handler)
+    application.add_handler(edit_location_conversation_handler)
+    application.add_handler(edit_name_conversation_handler)
 
     # Register button handler
     application.add_handler(CallbackQueryHandler(button_handler))

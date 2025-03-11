@@ -35,6 +35,8 @@ class RestaurantDataManager:
         rating: float | None,
         total_votes: int,
     ):
+        name = name.replace(":", ",")
+
         self.restaurants.append(
             Restaurant(
                 name=name,
@@ -50,7 +52,7 @@ class RestaurantDataManager:
         self.write_restaurant_list_json()
 
     def has(self, name: str) -> bool:
-        return any(r.name == name for r in self.restaurants)
+        return any(r.name.lower() == name.lower() for r in self.restaurants)
 
     def get_restaurant(self, name: str) -> Restaurant | None:
         return next((r for r in self.restaurants if r.name == name), None)
